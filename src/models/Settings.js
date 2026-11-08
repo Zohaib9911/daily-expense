@@ -6,7 +6,7 @@ const SettingsSchema = new Schema(
     key: { type: String, default: "main", unique: true },
     receiptRequiredAbove: rupees({ default: 5000 }),
     approvalRequiredAbove: rupees({ default: 20000 }),
-    shopName: { type: String, trim: true, default: "My Shop" },
+    shopName: { type: String, trim: true, default: "Khaas Furniture" },
     // Cash in the drawer when the shop starts using the app. Used as the opening cash of the FIRST daily closing.
     openingCashBalance: rupees({ default: 0 }),
   },

@@ -35,6 +35,11 @@ export default function ExpenseCard({ e }) {
               <span className="truncate">{e.order.orderNo} · {e.order.customerName}</span>
             </p>
           )}
+          {(e.staff || e.supplier) && (
+            <p className="mt-1 inline-flex max-w-full items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">
+              <span className="truncate">{e.staff ? `Staff: ${e.staff.name}` : `Supplier: ${e.supplier.name}`}</span>
+            </p>
+          )}
           {(e.isVoided || e.isBackdated || e.status !== "approved") && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {e.isVoided && <StatusBadge status="voided" />}

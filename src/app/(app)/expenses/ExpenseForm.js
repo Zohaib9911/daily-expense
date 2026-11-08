@@ -15,7 +15,7 @@ import { EXPENSE_CATEGORIES, METHOD_LABELS, PAYMENT_METHODS } from "@/lib/consta
 import { CATEGORY_META } from "@/lib/expense-meta";
 import { formatPKR } from "@/lib/format";
 import { btnPrimary, inputClass } from "@/lib/ui";
-import { expenseSchema } from "@/lib/validation/expense";
+import { STAFF_EXPENSE_CATEGORIES, expenseSchema } from "@/lib/validation/expense";
 import { zodResolver } from "@/lib/zod-resolver";
 
 
@@ -31,7 +31,7 @@ function FieldError({ message }) {
  * Create (mode="create") or edit (mode="edit", pass expenseId) an expense.
  * `initial`: { category, amount, paidTo, method, date, note, receiptUrl }.
  */
-export default function ExpenseForm({ mode = "create", expenseId, initial, thresholds, role, initialOrder = null }) {
+export default function ExpenseForm({ mode = "create", expenseId, initial, thresholds, role, initialOrder = null, staffOptions = [], supplierOptions = [] }) {
   const router = useRouter();
   const toast = useToast();
   const guard = useSubmitGuard();
@@ -44,18 +44,27 @@ export default function ExpenseForm({ mode = "create", expenseId, initial, thres
     handleSubmit,
     control,
     setValue,
+    getValues,
     setError,
     reset,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { ...initial, amount: initial.amount ? String(initial.amount) : "", orderId: initialOrder?.id || "" },
+    defaultValues: { ...initial, amount: initial.amount ? String(initial.amount) : "", orderId: initialOrder?.id || "", staffId: initial.staffId || "", supplierId: initial.supplierId || "" },
   });
 
-  const [amountText, category, method, receiptUrl] = useWatch({
+  const [amountText, category, method, receiptUrl, staffId, supplierId] = useWatch({
     control,
-    name: ["amount", "category", "method", "receiptUrl"],
+    name: ["amount", "category", "method", "receiptUrl", "staffId", "supplierId"],
   });
+
+  // Choosing a person/supplier fills "Paid to" with the name, unless the user typed something else there.
+  function fillName(id, options) {
+    const name = options.find((o) => o.id === id)?.name || "";
+    const current = String(getValues("paidTo") || "").trim();
+    const wasFilledByUs = !current || [...staffOptions, ...supplierOptions].some((o) => o.name === current);
+    if (wasFilledByUs) setValue("paidTo", name, { shouldDirty: true });
+  }
   const amount = Number(String(amountText || "").replace(/\D/g, "")) || 0;
   const needsReceipt = amount > thresholds.receiptRequiredAbove;
   const needsApproval = amount > thresholds.approvalRequiredAbove && role !== "admin";
@@ -113,6 +122,66 @@ export default function ExpenseForm({ mode = "create", expenseId, initial, thres
             </p>
           )}
         </fieldset>
+
+        {STAFF_EXPENSE_CATEGORIES.includes(category) && (
+          <div className="mt-4 border-t border-slate-100 pt-4">
+            <label htmlFor="staffId" className="mb-1.5 block text-sm font-medium text-slate-700">
+              {category === "salary" ? "Whose salary is this?" : "Which staff member is the advance for?"} <span className="text-red-600">(required)</span>
+            </label>
+            <select id="staffId" className={inputClass} {...register("staffId", { onChange: (e) => fillName(e.target.value, staffOptions) })}>
+              <option value="">Choose staff member...</option>
+              {staffOptions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                  {s.role ? ` (${s.role})` : ""}
+                </option>
+              ))}
+            </select>
+            <FieldError message={errors.staffId?.message} />
+            {staffOptions.length === 0 && (
+              <p className="mt-2 text-sm text-slate-600">
+                There is no active staff member yet. <Link href="/staff/new" className="font-semibold underline">Add staff</Link> first.
+              </p>
+            )}
+            <p className="mt-3 flex gap-2 rounded-xl bg-blue-50 px-3 py-2 text-sm text-blue-900">
+              <Info size={18} className="mt-0.5 shrink-0" />
+              {category === "salary" ? (
+                <span>
+                  This records the payment and who got it. To work the salary out from attendance and take off advances, use{" "}
+                  <Link href={`/staff/salary/new${staffId ? `?staff=${staffId}` : ""}`} className="font-semibold underline">Pay Salary</Link>.
+                </span>
+              ) : (
+                <span>
+                  This records the money paid out and who got it. To track it as an advance that is taken off the next salary, use{" "}
+                  <Link href={`/advances/new${staffId ? `?staff=${staffId}` : ""}`} className="font-semibold underline">Give Advance</Link>.
+                </span>
+              )}
+            </p>
+          </div>
+        )}
+
+        {category === "raw_material" && (
+          <div className="mt-4 border-t border-slate-100 pt-4">
+            <label htmlFor="supplierId" className="mb-1.5 block text-sm font-medium text-slate-700">
+              Which supplier? <span className="font-normal text-slate-500">(optional)</span>
+            </label>
+            <select id="supplierId" className={inputClass} {...register("supplierId", { onChange: (e) => fillName(e.target.value, supplierOptions) })}>
+              <option value="">No supplier (local market, cash purchase)</option>
+              {supplierOptions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+            <FieldError message={errors.supplierId?.message} />
+            {supplierId && (
+              <p className="mt-2 text-xs text-slate-500">
+                This marks who the cost is for. The supplier&apos;s balance only changes with Buy Material or{" "}
+                <Link href={`/suppliers/pay?supplier=${supplierId}`} className="font-semibold underline">Pay Supplier</Link>.
+              </p>
+            )}
+          </div>
+        )}
       </Card>
 
       <Card title="For a customer order (optional)">

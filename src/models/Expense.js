@@ -33,6 +33,9 @@ const ExpenseSchema = new Schema(
     sourceId: { type: ObjectId, index: true },
     // Optional: the customer order this cost belongs to (pipes, rope, powder coating...). Used for profit/loss per order.
     order: { type: ObjectId, ref: "Order", index: true },
+    // Optional labels: which staff member a Salary / Staff Advance expense is for, and which supplier a Raw Material one is for.
+    staff: { type: ObjectId, ref: "Staff", index: true },
+    supplier: { type: ObjectId, ref: "Supplier", index: true },
     approvedBy: { type: ObjectId, ref: "User" },
     approvedAt: { type: Date },
     // Set when the owner rejects a pending expense.

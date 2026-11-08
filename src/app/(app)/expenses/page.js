@@ -52,6 +52,7 @@ export default async function ExpensesPage({ searchParams }) {
       .skip((page - 1) * PAGE_SIZE)
       .limit(PAGE_SIZE)
       .populate("createdBy", "name")
+      .populate("staff supplier", "name")
       .populate({ path: "order", select: "orderNo customerName", options: { showVoided: true } })
       .lean(),
     Expense.countDocuments(filter).setOptions(opts),

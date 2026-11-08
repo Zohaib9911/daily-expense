@@ -7,8 +7,8 @@ export const getShopName = cache(async () => {
   try {
     await connectDB();
     const s = await Settings.findOne({ key: "main" }).select("shopName").lean();
-    return s?.shopName || "Shop Portal";
+    return s?.shopName || "Khaas Furniture";
   } catch {
-    return "Shop Portal";
+    return "Khaas Furniture";
   }
 });

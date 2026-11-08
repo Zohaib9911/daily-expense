@@ -41,7 +41,7 @@ export default async function ExpenseDetailPage({ params }) {
   await connectDB();
   const e = await Expense.findById(id)
     .setOptions({ showVoided: true })
-    .populate("createdBy updatedBy approvedBy rejectedBy voidedBy", "name")
+    .populate("createdBy updatedBy approvedBy rejectedBy voidedBy staff supplier", "name")
     .populate({ path: "order", select: "orderNo customerName", options: { showVoided: true } })
     .lean();
   if (!e) notFound();
@@ -92,6 +92,20 @@ export default async function ExpenseDetailPage({ params }) {
         <dl className="divide-y divide-slate-100">
           <Row label="Paid to">{e.paidTo || "—"}</Row>
           <Row label="Paid by">{METHOD_LABELS[e.method] || e.method}</Row>
+          {e.staff && (
+            <Row label="Staff member">
+              <Link href={`/staff/${e.staff._id}`} className="font-semibold text-blue-900 underline">
+                {e.staff.name}
+              </Link>
+            </Row>
+          )}
+          {e.supplier && (
+            <Row label="Supplier">
+              <Link href={`/suppliers/${e.supplier._id}`} className="font-semibold text-blue-900 underline">
+                {e.supplier.name}
+              </Link>
+            </Row>
+          )}
           {e.order && (
             <Row label="For order">
               <Link href={`/orders/${e.order._id}`} className="font-semibold text-blue-900 underline">

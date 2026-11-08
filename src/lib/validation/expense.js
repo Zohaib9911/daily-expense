@@ -10,6 +10,9 @@ import { formatPKR } from "@/lib/format";
 export const RECEIPT_URL_RE = /^\/api\/files\/receipts\/\d{4}\/\d{2}\/[a-f0-9]{32}\.jpg$/;
 export const MAX_AMOUNT = 100_000_000;
 
+/** Categories that must say WHICH staff member the money went to. */
+export const STAFF_EXPENSE_CATEGORIES = ["salary", "staff_advance"];
+
 /** "/api/files/receipts/2026/11/abc.jpg" -> "/api/files/receipts/2026/11/abc-t.jpg" (small version). */
 export const thumbUrl = (url) => (url ? url.replace(/\.jpg$/, "-t.jpg") : "");
 
@@ -34,9 +37,15 @@ export function expenseSchema({ receiptRequiredAbove }) {
       note: z.string().trim().max(500, "Keep the note under 500 characters").default(""),
       // Optional: link the cost to a customer order (checked against the database on the server).
       orderId: z.string().regex(/^([a-f\d]{24})?$/i, "Invalid order").default(""),
+      // Salary / Staff Advance: which staff member. Raw Material: which supplier (optional). Other categories ignore both.
+      staffId: z.string().regex(/^([a-f\d]{24})?$/i, "Invalid staff member").default(""),
+      supplierId: z.string().regex(/^([a-f\d]{24})?$/i, "Invalid supplier").default(""),
       receiptUrl: z.union([z.literal(""), z.string().regex(RECEIPT_URL_RE, "Invalid receipt")]).default(""),
     })
     .superRefine((v, ctx) => {
+      if (STAFF_EXPENSE_CATEGORIES.includes(v.category) && !v.staffId) {
+        ctx.addIssue({ code: "custom", path: ["staffId"], message: "Choose which staff member this is for" });
+      }
       if (v.category === "misc" && !v.note) {
         ctx.addIssue({ code: "custom", path: ["note"], message: "A note is required for Misc expenses" });
       }

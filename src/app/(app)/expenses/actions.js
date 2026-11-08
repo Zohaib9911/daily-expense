@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import connectDB from "@/lib/db";
 import Expense from "@/models/Expense";
 import Order from "@/models/Order";
+import Staff from "@/models/Staff";
+import Supplier from "@/models/Supplier";
 import Settings from "@/models/Settings";
 import { AppError, requireRole } from "@/lib/auth-helpers";
 import { createWithAudit, updateWithAudit, voidWithAudit } from "@/lib/audit";
@@ -13,7 +15,7 @@ import { approvalFields } from "@/lib/expense-status";
 import { EXPENSE_SOURCES } from "@/lib/expense-sources";
 import { WRITER_ROLES } from "@/lib/nav";
 import { uploadExists } from "@/lib/uploads";
-import { expenseSchema, fieldErrors } from "@/lib/validation/expense";
+import { STAFF_EXPENSE_CATEGORIES, expenseSchema, fieldErrors } from "@/lib/validation/expense";
 
 // Every action: signed-in admin/manager only (re-checked here, never trusted from the browser),
 // validated again with the real Settings, written through the audit helpers.
@@ -37,7 +39,7 @@ function refuseIfAutoCreated(expense) {
   }
 }
 
-async function validate(input) {
+async function validate(input, existing = null) {
   const settings = await Settings.getSingleton();
   const parsed = expenseSchema(settings).safeParse(input);
   if (!parsed.success) {
@@ -60,6 +62,28 @@ async function validate(input) {
       return { fail: { ok: false, error: "The order was not found. Choose it again.", fieldErrors: { orderId: "The order was not found" } } };
     }
   }
+  // Staff member (Salary / Staff Advance) and supplier (Raw Material): must exist; a new link must be to someone active.
+  // Other categories ignore both, so a stale choice from before the category was changed is dropped.
+  v.staffId = STAFF_EXPENSE_CATEGORIES.includes(v.category) ? v.staffId : "";
+  v.supplierId = v.category === "raw_material" ? v.supplierId : "";
+  let linkedName = "";
+  if (v.staffId) {
+    const s = await Staff.findById(v.staffId).select("name active").lean();
+    if (!s) return { fail: { ok: false, error: "The staff member was not found.", fieldErrors: { staffId: "The staff member was not found" } } };
+    if (!s.active && String(existing?.staff || "") !== v.staffId) {
+      return { fail: { ok: false, error: `${s.name} is not active.`, fieldErrors: { staffId: `${s.name} is not active` } } };
+    }
+    linkedName = s.name;
+  }
+  if (v.supplierId) {
+    const s = await Supplier.findById(v.supplierId).select("name active").lean();
+    if (!s) return { fail: { ok: false, error: "The supplier was not found.", fieldErrors: { supplierId: "The supplier was not found" } } };
+    if (!s.active && String(existing?.supplier || "") !== v.supplierId) {
+      return { fail: { ok: false, error: `${s.name} is not active.`, fieldErrors: { supplierId: `${s.name} is not active` } } };
+    }
+    linkedName = s.name;
+  }
+  if (!v.paidTo && linkedName) v.paidTo = linkedName; // "Paid to" defaults to the chosen person/supplier
   return { v, settings };
 }
 
@@ -81,6 +105,8 @@ export async function createExpense(input) {
         note: v.note,
         receiptUrl: v.receiptUrl,
         order: v.orderId || undefined,
+        staff: v.staffId || undefined,
+        supplier: v.supplierId || undefined,
         ...approvalFields(v.amount, user, settings), // over the limit: manager -> pending, owner -> self-approved
       },
       user
@@ -99,7 +125,7 @@ export async function updateExpense(id, input) {
     if (!existing) throw new AppError("Expense not found", 404);
     refuseIfAutoCreated(existing);
 
-    const { v, settings, fail } = await validate(input);
+    const { v, settings, fail } = await validate(input, existing);
     if (fail) return fail;
 
     const updates = {
@@ -110,6 +136,8 @@ export async function updateExpense(id, input) {
       note: v.note,
       receiptUrl: v.receiptUrl,
       order: v.orderId || null, // null = no order (clears the link)
+      staff: v.staffId || null,
+      supplier: v.supplierId || null,
     };
     // Keep the original time of day unless the day itself changed.
     if (dayKey(existing.date) !== v.date) updates.date = entryDate(v.date);
