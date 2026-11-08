@@ -1,0 +1,43 @@
+{
+  "packageId": "com.khaasfurniture.admin",
+  "host": "admin.khaasfurniture.com",
+  "name": "Khaas Portal",
+  "launcherName": "Khaas Portal",
+  "display": "standalone",
+  "themeColor": "#1e3a8a",
+  "themeColorDark": "#1e3a8a",
+  "navigationColor": "#ffffff",
+  "navigationColorDark": "#ffffff",
+  "navigationDividerColor": "#ffffff",
+  "navigationDividerColorDark": "#ffffff",
+  "backgroundColor": "#ffffff",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "iconUrl": "https://admin.khaasfurniture.com/icons/icon-512.png",
+  "maskableIconUrl": "https://admin.khaasfurniture.com/icons/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "C:/Users/user/khaas-android-keys/android.keystore",
+    "alias": "khaas"
+  },
+  "appVersionCode": 1,
+  "appVersion": "1.0.0",
+  "appVersionName": "1.0.0",
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://admin.khaasfurniture.com/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": { "enabled": false },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://admin.khaasfurniture.com/",
+  "minSdkVersion": 24,
+  "orientation": "portrait",
+  "fingerprints": [
+    { "name": "khaas-release", "value": "5B:05:98:10:68:AD:C1:A3:31:64:B7:30:3C:CA:A4:CD:62:C7:53:67:61:02:93:3C:AF:0E:00:0B:6F:85:0A:98" }
+  ],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": []
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.khaasfurniture.admin",
+      "sha256_cert_fingerprints": [
+        "5B:05:98:10:68:AD:C1:A3:31:64:B7:30:3C:CA:A4:CD:62:C7:53:67:61:02:93:3C:AF:0E:00:0B:6F:85:0A:98"
+      ]
+    }
+  }
+]

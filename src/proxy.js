@@ -6,7 +6,8 @@ import { getToken } from "next-auth/jwt";
 
 // The manifest and icons are fetched by the browser WITHOUT cookies, so they must be public
 // or "Add to Home Screen" breaks.
-const PUBLIC_PATHS = ["/login", "/api/auth", "/manifest.webmanifest", "/icons"];
+// /.well-known/assetlinks.json is how Android checks that the Khaas Portal app belongs to this site (it carries no secrets).
+const PUBLIC_PATHS = ["/login", "/api/auth", "/manifest.webmanifest", "/icons", "/.well-known/assetlinks.json"];
 
 export async function proxy(request) {
   const { pathname, search } = request.nextUrl;
