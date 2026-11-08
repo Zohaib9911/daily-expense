@@ -1,0 +1,4 @@
+# Shell scripts and server config must keep Unix line endings, or they fail on the Linux server.
+*.sh text eol=lf
+*.conf text eol=lf
+*.cjs text eol=lf
